@@ -337,8 +337,13 @@ pub fn evaluate_repl(
             );
         }
 
-        let input = line_editor.read_line(prompt);
         let shell_integration = config.shell_integration;
+        if shell_integration && config.use_domterm_features {
+            //"\033]133;A;cl=m;aid=%s\007" NUPID
+            let pre_command = format!("\x1b]133;A;cl=m;aid={}\x1b\\", "nushell");
+            run_ansi_sequence(&pre_command)?;
+        };
+        let input = line_editor.read_line(prompt);
 
         match input {
             Ok(Signal::Success(s)) => {
@@ -688,8 +693,12 @@ pub fn get_command_finished_marker(stack: &Stack, engine_state: &EngineState) ->
     let exit_code = stack
         .get_env_var(engine_state, "LAST_EXIT_CODE")
         .and_then(|e| e.as_i64().ok());
-
-    format!("\x1b]133;D;{}\x1b\\", exit_code.unwrap_or(0))
+    let config = engine_state.get_config();
+    if config.use_domterm_features {
+        format!("\x1b]133;D;{};aid={}\x1b\\", exit_code.unwrap_or(0), "nushell")
+    } else {
+        format!("\x1b]133;D;{}\x1b\\", exit_code.unwrap_or(0))
+    }
 }
 
 pub fn eval_env_change_hook(

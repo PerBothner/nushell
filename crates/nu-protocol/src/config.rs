@@ -188,6 +188,7 @@ impl Value {
         let mut config = Config::default();
 
         if let Ok(v) = v {
+            let mut use_domterm_features_set = false;
             for (key, value) in v.0.iter().zip(v.1) {
                 match key.as_str() {
                     "filesize_metric" => {
@@ -436,6 +437,7 @@ impl Value {
                     "use_domterm_features" => {
                         if let Ok(b) = value.as_bool() {
                             config.use_domterm_features = b;
+                            use_domterm_features_set = true;
                         } else {
                             eprintln!("$config.use_domterm_features")
                         }
@@ -444,6 +446,8 @@ impl Value {
                         eprintln!("$config.{} is an unknown config setting", x)
                     }
                 }
+            }
+            if !use_domterm_features_set {
             }
         } else {
             eprintln!("$env.config is not a record");

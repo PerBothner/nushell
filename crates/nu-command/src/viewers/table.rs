@@ -1,3 +1,4 @@
+use log::trace;
 use lscolors::{LsColors, Style};
 use nu_color_config::{get_color_config, style_primitive};
 use nu_engine::{column::get_columns, env_to_string, CallExt};
@@ -8,6 +9,7 @@ use nu_protocol::{
     PipelineData, PipelineMetadata, RawStream, ShellError, Signature, Span, SyntaxShape,
     TableIndexMode, Value,
 };
+use table_to_html::html_escape_text;
 use nu_table::{Alignment, Alignments, Table as NuTable, TableTheme, TextStyle};
 use nu_utils::get_ls_colors;
 use std::sync::Arc;
@@ -603,16 +605,14 @@ fn make_clickable_link(
     use_domterm_features: bool,
 ) -> String {
     // uri's based on this https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
-
-    if show_clickable_links && ! use_domterm_features/*FIXME*/{
+    if show_clickable_links {
         let url = match Url::from_file_path(full_path.clone()) {
             Ok(url) => url.to_string(),
             Err(_) => full_path.clone(),
         };
         let label = link_name.unwrap_or(full_path.as_str());
         if use_domterm_features {
-            // FIXME quote for html
-            format!("<a href=\"{}\">{}</a>", url, label)
+            format!("<a href=\"{}\">{}</a>", html_escape_text(&url), html_escape_text(&label))
         } else {
             format!("\x1b]8;;{}\x1b\\{}\x1b]8;;\x1b\\", url, label)
         }
@@ -1270,7 +1270,8 @@ fn render_path_name(
     ls_colors: &LsColors,
     span: Span,
 ) -> Option<Value> {
-    if !config.use_ls_colors {
+    let use_domterm_features = config.use_domterm_features;
+    if !config.use_ls_colors && !use_domterm_features {
         return None;
     }
 
@@ -1290,12 +1291,6 @@ fn render_path_name(
     // clickable links don't work in remote SSH sessions
     let in_ssh_session = std::env::var("SSH_CLIENT").is_ok();
     let show_clickable_links = config.show_clickable_links_in_ls && !in_ssh_session && has_metadata;
-    let use_domterm_features = config.use_domterm_features;
-
-    let ansi_style = style
-        .map(Style::to_crossterm_style)
-        // .map(ToNuAnsiStyle::to_nu_ansi_style)
-        .unwrap_or_default();
 
     let full_path = PathBuf::from(&stripped_path)
         .canonicalize()
@@ -1308,7 +1303,13 @@ fn render_path_name(
         use_domterm_features,
     );
 
-    let val = ansi_style.apply(full_path_link).to_string();
+    let val = if use_domterm_features { full_path_link } else {
+        let ansi_style = style
+            .map(Style::to_crossterm_style)
+            // .map(ToNuAnsiStyle::to_nu_ansi_style)
+            .unwrap_or_default();
+        ansi_style.apply(full_path_link).to_string()
+    };
     Some(Value::String { val, span })
 }
 

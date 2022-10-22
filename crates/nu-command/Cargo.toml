@@ -26,6 +26,7 @@ nu-test-support = { path = "../nu-test-support", version = "0.69.2"  }
 nu-utils = { path = "../nu-utils", version = "0.69.2" }
 nu-ansi-term = "0.46.0"
 num-format = { version = "0.4.3" }
+table_to_html = { git = "https://github.com/zhiburt/tabled", rev = "2d2831f7c8bbfc2e0c72004087386849cf2229bc" }
 
 # Potential dependencies for extras
 alphanumeric-sort = "1.4.4"

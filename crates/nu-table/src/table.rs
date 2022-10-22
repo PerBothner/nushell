@@ -10,6 +10,7 @@ use tabled::{
     object::{Cell, Columns, Rows, Segment},
     papergrid::{
         self,
+        Entity::Global, Padding,
         records::{
             cell_info::CellInfo, tcell::TCell, vec_records::VecRecords, Records, RecordsMut,
         },
@@ -169,9 +170,13 @@ fn draw_table(
     if use_domterm_html {
         //FUTURE - currently causes misaslignment with floating header
         //Part of fix is avoid emitting <p> elements in table_to_html.
-        //table.get_config_mut().set_padding(Global, Padding::default());
+        table.get_config_mut().set_padding(Global, Padding::default());
 
         let mut htable =  HtmlTable::from(table);
+        htable.override_cell_elements(|t, row, col| {
+            t.get_records().get_text((row, col)).to_string()
+        });
+
         htable.set_border_size(0);
         return Some(format!("\u{1b}]72;{}\u{7}", htable.to_string()));
     }

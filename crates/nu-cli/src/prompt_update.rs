@@ -105,10 +105,12 @@ pub(crate) fn update_prompt<'prompt>(
     // Now that we have the prompt string lets ansify it.
     // <133 A><prompt><133 B><command><133 C><command output>
     let left_prompt_string = if config.shell_integration {
+        let pre_prompt = if config.use_domterm_features { "\x1b]133;P;k=i\x1b\\" } else { PRE_PROMPT_MARKER };
+        let post_prompt = POST_PROMPT_MARKER;
         match left_prompt_string {
             Some(prompt_string) => Some(format!(
                 "{}{}{}",
-                PRE_PROMPT_MARKER, prompt_string, POST_PROMPT_MARKER
+                pre_prompt, prompt_string, post_prompt
             )),
             None => left_prompt_string,
         }
@@ -117,7 +119,7 @@ pub(crate) fn update_prompt<'prompt>(
     };
 
     let right_prompt_string = get_prompt_string(
-        PROMPT_COMMAND_RIGHT,
+        /* "\x1b]133;P;k=r\x1b\\" */ PROMPT_COMMAND_RIGHT /*"\x1b]133;B\x1b\\"*/,
         config,
         engine_state,
         &mut stack,
